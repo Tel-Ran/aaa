@@ -14,6 +14,5 @@ public class LocaleConfig {
 
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 
-        System.out.println("Date in UTC: " + new Date().toString());
     }
 }

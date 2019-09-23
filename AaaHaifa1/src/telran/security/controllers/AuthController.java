@@ -24,12 +24,11 @@ import telran.security.services.AuthService;
 @RequestMapping("/accounts")
 public class AuthController {
     final private AuthService authService;
-    final private ModelMapper modelMapper;
 
     @Autowired
-    public AuthController(AuthService authService, ModelMapper modelMapper) {
+    public AuthController(AuthService authService) {
         this.authService = authService;
-        this.modelMapper = modelMapper;
+        
     }
 
     @PostMapping("/add")

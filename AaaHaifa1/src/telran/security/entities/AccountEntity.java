@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,4 +30,5 @@ public class AccountEntity {
     List<String> roles = new ArrayList<>();
 
     boolean revoked = false;
+    LocalDateTime activationDate;
 }

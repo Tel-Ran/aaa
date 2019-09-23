@@ -4,10 +4,12 @@ package telran.security.services;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import telran.security.dto.AccountDto;
@@ -20,22 +22,32 @@ import telran.security.repositories.AccountRepository;
 @Service
 public class AuthService implements IAuthService {
 
-    final private AccountRepository accountRepository;
+    
+	public static final int MIN_LENGTH = 6;
 
+	public static final int MAX_LENGTH = 10;
+
+	final private AccountRepository accountRepository;
+  
     final private ModelMapper modelMapper;
+    final private PasswordEncoder passwordEncoder;
 
     @Autowired
-    public AuthService(AccountRepository accountRepository, ModelMapper modelMapper) {
+    public AuthService(AccountRepository accountRepository,
+    		ModelMapper modelMapper, PasswordEncoder passwordEncoder) {
         this.accountRepository = accountRepository;
         this.modelMapper = modelMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public AccountingCodes addAccount(AccountDto account) {
-        AccountEntity accountEntity = modelMapper.map(account, AccountEntity.class);
+        AccountEntity accountEntity =
+        		modelMapper.map(account, AccountEntity.class);
         
         accountEntity.getRoles().add(Roles.USER.toString());
-      //  accountEntity.setPassword(hashPassword(accountEntity.getPassword()));
+        accountEntity.setActivationDate(LocalDateTime.now());
+        accountEntity.setPassword(passwordEncoder.encode(account.getPassword()));
         accountRepository.save(accountEntity);
         return AccountingCodes.OK;
     }
@@ -51,18 +63,30 @@ public class AuthService implements IAuthService {
     @Override
     public AccountingCodes updatePassword(String username, String password) {
         AccountEntity accountEntity = accountRepository.findByUsername(username).orElse(null);
+        AccountingCodes res=AccountingCodes.WRONG_PASSWORD;
         if (Objects.isNull(accountEntity)) {
             return AccountingCodes.ACCOUNT_NOT_EXISTS;
         }
-//        if (accountEntity.getPassword().equals(hashPassword(password))) {
-//        	return AccountingCodes.SAME_PASSWORD;
-//        }
-//        accountEntity.setPassword(hashPassword(password));
-        accountRepository.save(accountEntity);
-        return AccountingCodes.OK;
+        if (validPassword(accountEntity.getPassword(), password)) {
+        	accountEntity.setPassword(passwordEncoder.encode(password));
+        	accountEntity.setActivationDate(LocalDateTime.now());
+        	accountRepository.save(accountEntity);
+        	res=AccountingCodes.OK;
+        } 
+        
+        return res;
     }
 
-    @Override
+    private boolean validPassword(String oldPasswordHash, String password) {
+		int length = password.length();
+    	if(length < MIN_LENGTH || length > MAX_LENGTH || 
+    			passwordEncoder.matches(password, oldPasswordHash))
+    		return false;
+    	return true;
+    	
+	}
+
+	@Override
     public AccountingCodes revokeAccount(String username) {
         AccountEntity accountEntity = accountRepository.findByUsername(username).orElse(null);
         if (Objects.isNull(accountEntity)) {
@@ -87,7 +111,7 @@ public class AuthService implements IAuthService {
     @Override
     public String getPasswordHash(String username) {
         AccountEntity accountEntity = accountRepository.findByUsername(username).orElse(null);
-        if (Objects.isNull(accountEntity)) {
+        if (Objects.isNull(accountEntity) || accountEntity.isRevoked()) {
             return null;
         }
         return accountEntity.getPassword();
@@ -99,7 +123,7 @@ public class AuthService implements IAuthService {
         if (Objects.isNull(accountEntity)) {
             return null;
         }
-        return LocalDateTime.ofEpochSecond(accountEntity.get_id().getTimestamp(), 0, ZoneOffset.ofHours(0));
+        return accountEntity.getActivationDate();
     }
 
     @Override
@@ -117,7 +141,10 @@ public class AuthService implements IAuthService {
         if (Objects.isNull(accountEntity)) {
             return null;
         }
-        accountEntity.getRoles().add(role);
+        List<String> roles = accountEntity.getRoles();
+        if(roles.contains(role))
+        	return AccountingCodes.ROLE_ALREADY_EXISTS;
+        roles.add(role);
         accountRepository.save(accountEntity);
         return AccountingCodes.OK;
     }
@@ -128,7 +155,10 @@ public class AuthService implements IAuthService {
         if (Objects.isNull(accountEntity)) {
             return null;
         }
-        accountEntity.getRoles().remove(role);
+        List<String> roles = accountEntity.getRoles();
+        if(!roles.contains(role))
+        	return AccountingCodes.ROLE_NOT_EXISTS;
+        roles.remove(role);
         accountRepository.save(accountEntity);
         return AccountingCodes.OK;
     }
@@ -137,8 +167,6 @@ public class AuthService implements IAuthService {
         return accountRepository.existsByUsername(username);
     }
 
-    public AccountEntity getUserByUsername(String username) {
-        return accountRepository.findByUsername(username).orElse(null);
-    }
+    
 
 }

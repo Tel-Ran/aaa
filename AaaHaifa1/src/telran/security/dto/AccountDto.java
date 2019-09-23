@@ -18,5 +18,5 @@ public class AccountDto {
     String username;
     @Size(min = 6, message = "Password should be 6 symbols or longer")
     String password;
-    HashSet<String> roles;
+    
 }
