@@ -14,14 +14,12 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import telran.security.dto.AccountDto;
-import telran.security.dto.AccountingCodes;
-import telran.security.dto.RoleDto;
-import telran.security.entities.AccountEntity;
+import telran.security.dto.*;
+
 import telran.security.services.AuthService;
 
 @RestController
-@RequestMapping("/accounts")
+
 public class AuthController {
     final private AuthService authService;
 
@@ -31,112 +29,62 @@ public class AuthController {
         
     }
 
-    @PostMapping("/add")
-    ResponseEntity<AccountDto> addAccount(@Valid @RequestBody AccountDto accountDto) {
-        authService.addAccount(accountDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(accountDto);
+    @PostMapping(value=AccountingApiConstants.ADD_ACCOUNT)
+    ResponseEntity<AccountingCodes> addAccount(@Valid @RequestBody AccountDto accountDto) {
+        AccountingCodes res=authService.addAccount(accountDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
-    @DeleteMapping("/delete")
-    ResponseEntity<AccountingCodes> deleteAccount(@RequestBody AccountDto accountDto,
-                                 @RequestHeader("Authorization") String authData) {
-
-//        ResponseEntity x = authRequest(accountDto.getUsername(), authData);
-//        if (x != null) return x;
-
+    @DeleteMapping(value=AccountingApiConstants.DELETE_ACCOUNT)
+    ResponseEntity<AccountingCodes> deleteAccount(@RequestBody AccountDto accountDto) {
         AccountingCodes res = authService.removeAccount(accountDto.getUsername());
         return ResponseEntity.status(HttpStatus.OK).body(res);
     }
 
-    @PutMapping("/password")
-    ResponseEntity<AccountingCodes> updatePassword(@RequestBody AccountDto accountDto,
-                                  @RequestHeader("Authorization") String authData) {
-        ResponseEntity<AccountingCodes> x = authRequest(accountDto.getUsername(), authData);
-        if (x != null) return x;
+    @PutMapping(value=AccountingApiConstants.UPDATE_PASSWORD)
+    ResponseEntity<AccountingCodes> updatePassword(@RequestBody AccountDto accountDto
+                                  ) {
+        
 
         AccountingCodes res = authService.updatePassword(accountDto.getUsername(), accountDto.getPassword());
         return ResponseEntity.status(HttpStatus.OK).body(res);
     }
 
-    @PutMapping("/revoke")
-    ResponseEntity revokeAccount(@RequestBody AccountDto accountDto,
-                                 @RequestHeader("Authorization") String authData) {
-        ResponseEntity x = authRequest(accountDto.getUsername(), authData);
-        if (x != null) return x;
-
-        authService.revokeAccount(accountDto.getUsername());
-        return new ResponseEntity(HttpStatus.OK);
+    @PutMapping(value=AccountingApiConstants.REVOKE_ACCOUNT)
+    ResponseEntity<AccountingCodes> revokeAccount(@RequestBody AccountDto accountDto) {
+       
+        AccountingCodes res=authService.revokeAccount(accountDto.getUsername());
+        return ResponseEntity.status(HttpStatus.OK).body(res);
     }
 
-    @PutMapping("/activate")
-    ResponseEntity activateAccount(@RequestBody AccountDto accountDto,
-                                   @RequestHeader("Authorization") String authData) {
-        ResponseEntity x = authRequestSuperuser(accountDto.getUsername(), authData);
-        if (x != null) return x;
-
-        authService.activateAccount(accountDto.getUsername());
-        return new ResponseEntity(HttpStatus.OK);
-    }
-
-    @PutMapping("/roles/add")
-    ResponseEntity addRole(@Valid @RequestBody RoleDto roleDto,
-                           @RequestHeader("Authorization") String authData) {
-        ResponseEntity x = authRequestSuperuser(roleDto.getUsername(), authData);
-        if (x != null) return x;
-
-        authService.addRole(roleDto.getUsername(), roleDto.getRole());
-        return new ResponseEntity(HttpStatus.OK);
-    }
-
-    @PutMapping("/roles/remove")
-    ResponseEntity removeRole(@Valid @RequestBody RoleDto roleDto,
-                              @RequestHeader("Authorization") String authData) {
-        ResponseEntity x = authRequestSuperuser(roleDto.getUsername(), authData);
-        if (x != null) return x;
-
-        authService.removeRole(roleDto.getUsername(), roleDto.getRole());
-        return new ResponseEntity(HttpStatus.OK);
-    }
-
-
-    private ResponseEntity authRequest(String username, String authData) {
-		return null;
-    }
+    @PutMapping(value=AccountingApiConstants.ACTIVATE_ACCOUNT)
+    ResponseEntity<AccountingCodes> activateAccount(@RequestBody AccountDto accountDto) {
         
 
-//        String passwordHash = authService.getPasswordHash(userDetails[0]);
-//        if (Objects.isNull(passwordHash)) {
-//            return new ResponseEntity(HttpStatus.UNAUTHORIZED);
-//        }
-//        if (!passwordHash.equals(hashPassword(userDetails[1]))) {
-//            return new ResponseEntity(HttpStatus.UNAUTHORIZED);
-//        }
-//        AccountEntity accountEntity = authService.getUserByUsername(username);
-//        if (accountEntity.isRevoked()) {
-//            return new ResponseEntity(HttpStatus.FORBIDDEN);
-//        }
-//        if (!userDetails[0].equals(accountEntity.getUsername()) && !accountEntity.getRoles().contains("SUPERUSER")) {
-//            return new ResponseEntity(HttpStatus.FORBIDDEN);
-//        }
-//        return null;
- //   }
-
-    private ResponseEntity authRequestSuperuser(String username, String authData) {
-//      //  String[] userDetails = decodeAuthHeader(authData);
-//        String passwordHash = authService.getPasswordHash(userDetails[0]);
-//        if (Objects.isNull(passwordHash)) {
-//            return new ResponseEntity(HttpStatus.UNAUTHORIZED);
-//        }
-//        if (!passwordHash.equals(hashPassword(userDetails[1]))) {
-//            return new ResponseEntity(HttpStatus.UNAUTHORIZED);
-//        }
-//        AccountEntity accountEntity = authService.getUserByUsername(username);
-//        if (accountEntity.isRevoked()) {
-//            return new ResponseEntity(HttpStatus.FORBIDDEN);
-//        }
-//        if (!accountEntity.getRoles().contains("SUPERUSER")) {
-//            return new ResponseEntity(HttpStatus.FORBIDDEN);
-//        }
-        return null;
+        AccountingCodes res=authService.activateAccount(accountDto.getUsername());
+        return ResponseEntity.status(HttpStatus.OK).body(res);
     }
+
+    @PutMapping(value=AccountingApiConstants.ADD_ROLE)
+    ResponseEntity<AccountingCodes> addRole(@RequestBody RoleDto roleDto) {
+        
+
+        AccountingCodes res=authService.addRole(roleDto.getUsername(), roleDto.getRole());
+      return ResponseEntity.status(HttpStatus.OK).body(res);
+    }
+
+    @PutMapping(value=AccountingApiConstants.REMOVE_ROLE)
+    ResponseEntity<AccountingCodes> removeRole(@Valid @RequestBody RoleDto roleDto) {
+        
+
+        AccountingCodes res=authService.removeRole(roleDto.getUsername(), roleDto.getRole());
+        return ResponseEntity.status(HttpStatus.OK).body(res);
+    }
+
+
+    
+        
+
+
+ 
 }
